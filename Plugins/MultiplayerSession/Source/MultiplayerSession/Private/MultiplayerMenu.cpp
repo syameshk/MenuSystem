@@ -8,8 +8,10 @@
 #include "MultiplayerSessionsSubsystem.h"
 
 
-void UMultiplayerMenu::Init(int32 NumberOfPublicConnections, FString TypeOfMatch)
+void UMultiplayerMenu::Init(int32 NumberOfPublicConnections, FString TypeOfMatch, FString LobbyPath, FName NewSessionName)
 {
+	SessionName = NewSessionName;
+	PathToLobby = FString::Printf(TEXT("%s?listen"),*LobbyPath);
 	NumPublicConnections = NumberOfPublicConnections;
 	MatchType = TypeOfMatch;
 	AddToViewport();
@@ -39,6 +41,7 @@ void UMultiplayerMenu::Init(int32 NumberOfPublicConnections, FString TypeOfMatch
 
 	if (MultiplayerSessionsSubsystem)
 	{
+		MultiplayerSessionsSubsystem->MultiplayerSessionName = SessionName;
 		MultiplayerSessionsSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &ThisClass::OnCreateSession);
 		MultiplayerSessionsSubsystem->MultiplayerOnFindSessionsComplete.AddUObject(this, &ThisClass::OnFindSession);
 		MultiplayerSessionsSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &ThisClass::OnJoinSession);
@@ -73,21 +76,22 @@ void UMultiplayerMenu::OnCreateSession(bool bWasSuccessful)
 {
 	if (bWasSuccessful)
 	{
-		MultiplayerSessionsSubsystem->Log(FString::Printf(TEXT("Session Created!")));
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Session Created!")));
 		UWorld* World = GetWorld();
 		if (World) {
-			World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
+			World->ServerTravel(PathToLobby);
 		}
 	}
 	else {
-		MultiplayerSessionsSubsystem->Log(FString::Printf(TEXT("Session Creation Failed!")));
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Session Creation Failed!")));
+		//Enable button if we fail
+		HostButton->SetIsEnabled(true);
 	}
 }
 
 void UMultiplayerMenu::OnFindSession(const TArray<FOnlineSessionSearchResult>& SearchResults, bool bWasSuccessful)
 {
-
-	if (MultiplayerSessionsSubsystem)
+	if (!MultiplayerSessionsSubsystem)
 		return;
 
 	for (auto Result : SearchResults)
@@ -109,11 +113,16 @@ void UMultiplayerMenu::OnFindSession(const TArray<FOnlineSessionSearchResult>& S
 			return;
 		}
 	}
+
+	if (!bWasSuccessful || SearchResults.Num() <= 0)
+	{
+		JoinButton->SetIsEnabled(true);
+	}
 }
 
 void UMultiplayerMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
-	if (MultiplayerSessionsSubsystem)
+	if (!MultiplayerSessionsSubsystem)
 		return;
 
 	FString Address = MultiplayerSessionsSubsystem->GetJoinedSessionAddress();
@@ -124,6 +133,11 @@ void UMultiplayerMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 		{
 			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 		}
+	}
+
+	if (Address.IsEmpty() || Result != EOnJoinSessionCompleteResult::Success)
+	{
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
@@ -140,7 +154,8 @@ void UMultiplayerMenu::HostButtonClicked()
 
 	if (MultiplayerSessionsSubsystem) 
 	{
-		MultiplayerSessionsSubsystem->Log(FString::Printf(TEXT("Creating a session!")));
+		HostButton->SetIsEnabled(false);
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Creating a session!")));
 		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
 	}
 }
@@ -149,7 +164,8 @@ void UMultiplayerMenu::JoinButtonClicked()
 {
 	if (MultiplayerSessionsSubsystem)
 	{
-		MultiplayerSessionsSubsystem->Log(FString::Printf(TEXT("Jopining a session!")));
+		JoinButton->SetIsEnabled(false);
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Jonining a session!")));
 		MultiplayerSessionsSubsystem->FindSessions(10000);
 	}
 }

@@ -17,7 +17,7 @@ class MULTIPLAYERSESSION_API UMultiplayerMenu : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable)
-	void Init(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")));
+	void Init(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")), FString LobbyPath = FString(TEXT("/Game/ThirdPerson/Maps/Lobby")), FName NewSessionName = FName(TEXT("GameSession")));
 
 protected:
 	virtual bool Initialize() override;
@@ -52,4 +52,6 @@ private:
 
 	int32 NumPublicConnections{4};
 	FString MatchType{TEXT("FreeForAll")};
+	FString PathToLobby{TEXT("")};
+	FName SessionName{ NAME_GameSession };
 };
