@@ -131,22 +131,26 @@ void UMultiplayerMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
 		if (PlayerController)
 		{
+			MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("ClientTravel. Address: %s"), *Address));
 			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 		}
 	}
 
 	if (Address.IsEmpty() || Result != EOnJoinSessionCompleteResult::Success)
 	{
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Failed. Address: %s, State %d"), *Address, Result));
 		JoinButton->SetIsEnabled(true);
 	}
 }
 
 void UMultiplayerMenu::OnDestroySession(bool bWasSuccessful)
 {
+
 }
 
 void UMultiplayerMenu::OnStartSession(bool bWasSuccessful)
 {
+
 }
 
 void UMultiplayerMenu::HostButtonClicked()

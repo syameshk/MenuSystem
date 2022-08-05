@@ -103,6 +103,7 @@ void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), MultiplayerSessionName, SessionResult))
 	{
+		LogError(*FString::Printf(TEXT("Could not join session!")));
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
 		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
 	}
@@ -181,7 +182,7 @@ void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOn
 	if (SessionInterface) {
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
 	}
-
+	Log(*FString::Printf(TEXT("Join Session Completeed. SessionName: %s"), *SessionName.ToString()));
 	MultiplayerOnJoinSessionComplete.Broadcast(Result);
 }
 
