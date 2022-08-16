@@ -16,6 +16,7 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
 	if (Subsystem)
 	{
 		SessionInterface = Subsystem->GetSessionInterface();
+		Log(*FString::Printf(TEXT("Found Subsystem %s"), *Subsystem->GetSubsystemName().ToString()));
 	}
 }
 
