@@ -4,6 +4,7 @@
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 
 UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
@@ -11,12 +12,21 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
 	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete)),
 	DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(this, &ThisClass::OnDestroySessionComplete)),
 	StartSessionCompleteDelegate(FOnStartSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnStartSessionComplete))
+	//,LoginCompleteDelegate(FOnLoginCompleteDelegate::CreateUObject(this, &ThisClass::OnLoginCompleteCallback))
 {
+	bIsLoggedIn = false;
+
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (Subsystem)
 	{
 		SessionInterface = Subsystem->GetSessionInterface();
 		Log(*FString::Printf(TEXT("Found Subsystem %s"), *Subsystem->GetSubsystemName().ToString()));
+
+		int num = SessionInterface->GetNumSessions();
+		Log(*FString::Printf(TEXT("Number of sessions %d"), num));
+
+		//Login();
+			
 	}
 }
 
@@ -28,6 +38,13 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 		return;
 	}
 
+	//Check if the user logged in before doing anything
+	if (!bIsLoggedIn) {
+		LogError(*FString::Printf(TEXT("User not logged in!")));
+		MultiplayerOnCreateSessionComplete.Broadcast(false);
+		return;
+	}
+	
 	//Check if any sessions exists
 	auto ExistingSession = SessionInterface->GetNamedSession(MultiplayerSessionName);
 	//If exists, destroy the session
@@ -56,12 +73,32 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 	LastSessionSettings->BuildUniqueId = 1;
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	//TEST
+	int players = GetWorld()->GetNumPlayerControllers();
+	Log(*FString::Printf(TEXT("Players %d"), players));
+	if (!LocalPlayer)
+		Log(*FString::Printf(TEXT("Local Player Not Valid")));
+
+	FUniqueNetIdRepl id = LocalPlayer->GetPreferredUniqueNetId();
+	if (!id.IsValid()) {
+		Log(*FString::Printf(TEXT("Local Player ID Not Valid")));
+	}
+
+	FUniqueNetIdPtr Ptr = LocalPlayer->GetPreferredUniqueNetId().GetUniqueNetId();
+	if (!Ptr.IsValid()) {
+		Log(*FString::Printf(TEXT("Local Player ID Not Valid")));
+	}
+	else {
+		Log(*FString::Printf(TEXT("Local Player ID %s"), *Ptr.Get()->ToString()));
+	}
+	//END TEST
 	if (!SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), MultiplayerSessionName, *LastSessionSettings))
 	{
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 
 		MultiplayerOnCreateSessionComplete.Broadcast(false);
 	}
+	
 }
 
 void UMultiplayerSessionsSubsystem::FindSessions(int32 MaxSearchResults)
@@ -69,6 +106,13 @@ void UMultiplayerSessionsSubsystem::FindSessions(int32 MaxSearchResults)
 	if (!SessionInterface.IsValid())
 	{
 		LogWarning(*FString::Printf(TEXT("Session Interface Is Not Valid!")));
+		return;
+	}
+
+	//Check if the user logged in before doing anything
+	if (!bIsLoggedIn) {
+		LogError(*FString::Printf(TEXT("User not logged in!")));
+		MultiplayerOnFindSessionsComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
 		return;
 	}
 
@@ -134,6 +178,24 @@ void UMultiplayerSessionsSubsystem::StartSession()
 {
 }
 
+void UMultiplayerSessionsSubsystem::Login()
+{
+	Log(*FString::Printf(TEXT("Trying to login!")));
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem) 
+	{
+		if (IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface())
+		{
+			FOnlineAccountCredentials Credentials;
+			Credentials.Id = FString();
+			Credentials.Token = FString();
+			Credentials.Type = FString(TEXT("accountportal"));
+			Identity->OnLoginCompleteDelegates->AddUObject(this, &UMultiplayerSessionsSubsystem::OnLoginCompleteCallback);
+			Identity->Login(0, Credentials);
+		}
+	}
+}
+
 FString UMultiplayerSessionsSubsystem::GetJoinedSessionAddress()
 {
 	FString Address;
@@ -148,6 +210,26 @@ FString UMultiplayerSessionsSubsystem::GetJoinedSessionAddress()
 		Log(*FString::Printf(TEXT("Connect String: %s"), *Address));
 	}
 	return Address;
+}
+
+void UMultiplayerSessionsSubsystem::OnLoginCompleteCallback(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error)
+{
+	UE_LOG(LogTemp, Warning, TEXT("LoggedIn: %d"), bWasSuccessful);
+	Log(*FString::Printf(TEXT("LoggedIn: %d"), bWasSuccessful));
+	if (!bWasSuccessful) {
+		LogError(*FString::Printf(TEXT("LoggedIn Failed. Reaseon %s"), *Error));
+	}
+	bIsLoggedIn = bWasSuccessful;
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		if (IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface())
+		{
+			Identity->ClearOnLoginCompleteDelegates(0,this);
+		}
+	}
+
+	OnLoginComplete.Broadcast(LocalUserNum, bWasSuccessful, UserId, Error);
 }
 
 void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
