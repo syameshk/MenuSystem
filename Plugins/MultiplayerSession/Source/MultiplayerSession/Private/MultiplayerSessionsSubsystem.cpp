@@ -184,14 +184,25 @@ void UMultiplayerSessionsSubsystem::Login()
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (Subsystem) 
 	{
+		//https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/Online/EOS/
 		if (IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface())
 		{
 			FOnlineAccountCredentials Credentials;
+			//The account portal way, epic login will heppen on browser
 			Credentials.Id = FString();
 			Credentials.Token = FString();
 			Credentials.Type = FString(TEXT("accountportal"));
+
+			//For developer
+			Credentials.Id = FString("127.0.0.1:8081");
+			Credentials.Token = FString("SK");
+			Credentials.Type = FString(TEXT("developer"));
+
 			Identity->OnLoginCompleteDelegates->AddUObject(this, &UMultiplayerSessionsSubsystem::OnLoginCompleteCallback);
 			Identity->Login(0, Credentials);
+
+			//Use auto login, will be useful while setting up dedicated servers
+			//Identity->AutoLogin(0);
 		}
 	}
 }
