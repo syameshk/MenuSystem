@@ -178,33 +178,48 @@ void UMultiplayerSessionsSubsystem::StartSession()
 {
 }
 
-void UMultiplayerSessionsSubsystem::Login()
+void UMultiplayerSessionsSubsystem::Login(int32 Method)
 {
 	Log(*FString::Printf(TEXT("Trying to login!")));
+
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (Subsystem) 
 	{
+		//Only do login if we use EOS
+		if (!(Subsystem->GetSubsystemName().ToString() == "EOS")) 
+		{
+			Log(*FString::Printf(TEXT("Not EOS, skipping login!")));
+			bIsLoggedIn = true;
+			return;
+		}
+
 		//https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/Online/EOS/
 		if (IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface())
 		{
 			FOnlineAccountCredentials Credentials;
+
 			//The account portal way, epic login will heppen on browser
-			Credentials.Id = FString();
-			Credentials.Token = FString();
-			Credentials.Type = FString(TEXT("accountportal"));
+			if (Method == 0) {
+				Log(*FString::Printf(TEXT("Using accountportal for login")));
+				Credentials.Id = FString();
+				Credentials.Token = FString();
+				Credentials.Type = FString(TEXT("accountportal"));
+			}
 
 			//For developer
-			/*
-			Credentials.Id = FString("127.0.0.1:8081");
-			Credentials.Token = FString("SK");
-			Credentials.Type = FString(TEXT("developer"));
-			*/
+			if (Method == 1) {
+				Log(*FString::Printf(TEXT("Using developer for login")));
+				Credentials.Id = FString("127.0.0.1:8081");
+				Credentials.Token = FString("SK");
+				Credentials.Type = FString(TEXT("developer"));
+			}
 
 			Identity->OnLoginCompleteDelegates->AddUObject(this, &UMultiplayerSessionsSubsystem::OnLoginCompleteCallback);
-			Identity->Login(0, Credentials);
-
+			if(Method != 2)
+				Identity->Login(0, Credentials);
+			else
 			//Use auto login, will be useful while setting up dedicated servers
-			//Identity->AutoLogin(0);
+			Identity->AutoLogin(0);
 		}
 	}
 }

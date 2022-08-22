@@ -20,6 +20,9 @@ public:
 	void Init(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")), FString LobbyPath = FString(TEXT("/Game/ThirdPerson/Maps/Lobby")), FName NewSessionName = FName(TEXT("GameSession")));
 
 	UFUNCTION(BlueprintCallable)
+	void Login(int32 LoginMethod = 0);
+
+	UFUNCTION(BlueprintCallable)
 	void HostSession(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")), FString LobbyPath = FString(TEXT("/Game/ThirdPerson/Maps/Lobby")), FName NewSessionName = FName(TEXT("GameSession")));
 
 	UFUNCTION(BlueprintCallable)

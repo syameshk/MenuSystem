@@ -32,7 +32,7 @@ public:
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	void DestroySession();
 	void StartSession();
-	void Login();
+	void Login(int32 Method);
 
 	FString GetJoinedSessionAddress();
 

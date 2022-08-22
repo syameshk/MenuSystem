@@ -47,7 +47,15 @@ void UMultiplayerMenu::Init(int32 NumberOfPublicConnections, FString TypeOfMatch
 		MultiplayerSessionsSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &ThisClass::OnJoinSession);
 		MultiplayerSessionsSubsystem->MultiplayerOnDestroySessionComplete.AddDynamic(this, &ThisClass::OnDestroySession);
 		MultiplayerSessionsSubsystem->MultiplayerOnStartSessionComplete.AddDynamic(this, &ThisClass::OnStartSession);
-		MultiplayerSessionsSubsystem->Login();
+		//MultiplayerSessionsSubsystem->Login(0);
+	}
+}
+
+void UMultiplayerMenu::Login(int32 LoginMethod) {
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Login requested %d"), LoginMethod));
+		MultiplayerSessionsSubsystem->Login(LoginMethod);
 	}
 }
 
@@ -71,7 +79,7 @@ void UMultiplayerMenu::JoinSession(FString TypeOfMatch, FName NewSessionName) {
 
 	if (MultiplayerSessionsSubsystem)
 	{
-		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Jonining a session &"),*MatchType));
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Jonining a session %s"),*MatchType));
 		MultiplayerSessionsSubsystem->FindSessions(10000);
 	}
 }
