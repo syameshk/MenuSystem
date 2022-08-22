@@ -194,9 +194,11 @@ void UMultiplayerSessionsSubsystem::Login()
 			Credentials.Type = FString(TEXT("accountportal"));
 
 			//For developer
+			/*
 			Credentials.Id = FString("127.0.0.1:8081");
 			Credentials.Token = FString("SK");
 			Credentials.Type = FString(TEXT("developer"));
+			*/
 
 			Identity->OnLoginCompleteDelegates->AddUObject(this, &UMultiplayerSessionsSubsystem::OnLoginCompleteCallback);
 			Identity->Login(0, Credentials);
@@ -299,7 +301,6 @@ void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, 
 void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName SessionName, bool bWasSuccessful)
 {
 }
-
 
 
 void UMultiplayerSessionsSubsystem::Log(FString message)

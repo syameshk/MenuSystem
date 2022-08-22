@@ -51,6 +51,31 @@ void UMultiplayerMenu::Init(int32 NumberOfPublicConnections, FString TypeOfMatch
 	}
 }
 
+void UMultiplayerMenu::HostSession(int32 NumberOfPublicConnections, FString TypeOfMatch, FString LobbyPath, FName NewSessionName) {
+	SessionName = NewSessionName;
+	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
+	NumPublicConnections = NumberOfPublicConnections;
+	MatchType = TypeOfMatch;
+
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Creating a session: %s"), *MatchType));
+		MultiplayerSessionsSubsystem->MultiplayerSessionName = SessionName;
+		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
+	}
+}
+
+void UMultiplayerMenu::JoinSession(FString TypeOfMatch, FName NewSessionName) {
+	SessionName = NewSessionName;
+	MatchType = TypeOfMatch;
+
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->Log(*FString::Printf(TEXT("Jonining a session &"),*MatchType));
+		MultiplayerSessionsSubsystem->FindSessions(10000);
+	}
+}
+
 bool UMultiplayerMenu::Initialize()
 {
 	if (!Super::Initialize()) {
