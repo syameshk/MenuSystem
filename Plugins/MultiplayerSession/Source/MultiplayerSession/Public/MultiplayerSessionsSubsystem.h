@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
-
+//#include "Interfaces/OnlineExternalUIInterface.h"
 #include "MultiplayerSessionsSubsystem.generated.h"
 
 
@@ -16,7 +16,6 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSe
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_FourParams(FOnLoginComplete, int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
-
 /**
  * 
  */
@@ -75,7 +74,7 @@ private:
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 	FDelegateHandle StartSessionCompleteDelegateHandle;
 	//FOnLoginCompleteDelegate LoginCompleteDelegate;
-	//FDelegateHandle LoginCompleteDelegateHandle;
+	FDelegateHandle LoginCompleteDelegateHandle;
 
 	bool bCreateSessionOnDestroy{ false };
 	int32 LastNumPublicConnections;
