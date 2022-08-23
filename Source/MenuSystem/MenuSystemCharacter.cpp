@@ -14,10 +14,7 @@
 //////////////////////////////////////////////////////////////////////////
 // AMenuSystemCharacter
 
-AMenuSystemCharacter::AMenuSystemCharacter():
-	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete)),
-	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionsComplete)),
-	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete))
+AMenuSystemCharacter::AMenuSystemCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -55,21 +52,6 @@ AMenuSystemCharacter::AMenuSystemCharacter():
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
-
-	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-	if (OnlineSubsystem)
-	{
-		OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
-
-		if (GEngine) {
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.0f,
-				FColor::Blue,
-				FString::Printf(TEXT("Found Subsystem %s"), *OnlineSubsystem->GetSubsystemName().ToString())
-			);
-		}
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -96,155 +78,6 @@ void AMenuSystemCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	// handle touch devices
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &AMenuSystemCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &AMenuSystemCharacter::TouchStopped);
-}
-
-void AMenuSystemCharacter::CreateGameSession()
-{
-	//Called when pressing the 1 key
-
-	if (!OnlineSessionInterface.IsValid())
-	{
-		return;
-	}
-
-	//Check if any sessions exists
-	auto ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
-	//If exists, destroy the session
-	if (ExistingSession != nullptr)
-	{
-		OnlineSessionInterface->DestroySession(NAME_GameSession);
-	}
-
-	//Add delegatre
-	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-
-	//Create new session 
-	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
-	SessionSettings->bIsLANMatch = false;
-	SessionSettings->NumPublicConnections = 4;
-	SessionSettings->bAllowJoinInProgress = true;
-	SessionSettings->bAllowJoinViaPresence = true;
-	SessionSettings->bShouldAdvertise = true;
-	SessionSettings->bUsesPresence = true;
-	SessionSettings->bUseLobbiesIfAvailable = true;
-	SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
-	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
-
-}
-
-void AMenuSystemCharacter::JoinGameSession()
-{
-	//Find Game Session
-	Print(*FString::Printf(TEXT("JoinGameSession!")));
-
-	//Redister to the event
-	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
-
-	//Search options
-	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->MaxSearchResults = 10000;
-	SessionSearch->bIsLanQuery = false;
-	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-
-	//Search start
-	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
-}
-
-void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
-{
-	//Print the message
-	if (bWasSuccessful) {
-		Print(*FString::Printf(TEXT("Created session %s"), *SessionName.ToString()));
-	}
-	else {
-		PrintError(*FString::Printf(TEXT("Failed to create a session")));
-		return;
-	}
-
-	//Load Lobby Level
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		World->ServerTravel(FString("/Game/ThirdPerson/Maps/Lobby?listen"));
-		//C:/Users/syame/OneDrive/Documents/Unreal Projects/MenuSystem/Content/ThirdPerson/Maps/Lobby.umap
-	}
-}
-
-void AMenuSystemCharacter::OnFindSessionsComplete(bool bWasSuccessful)
-{
-	if (!OnlineSessionInterface)
-	{
-		PrintError(*FString::Printf(TEXT("OnlineSessionInterface Not Valid!")));
-		return;
-	}
-
-	if (!bWasSuccessful) {
-		Print(*FString::Printf(TEXT("Session Search Failed!")));
-		return;
-	}
-
-	if (SessionSearch->SearchResults.Num() < 1) {
-		Print(*FString::Printf(TEXT("Session Search Found No Sessions!")));
-	}
-
-	for (auto Result : SessionSearch->SearchResults)
-	{
-		FString Id = Result.GetSessionIdStr();
-		FString User = Result.Session.OwningUserName;
-		//Get the MatchType Value
-		FString MatchType;
-		Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
-		//Print session details
-		Print(*FString::Printf(TEXT("Id: %s, User: %s"), *Id, *User));
-		//Check for Matchtype value
-		if (MatchType == FString("FreeForAll")) 
-		{
-			Print(*FString::Printf(TEXT("Joining Match Type: %s"), *MatchType));
-
-			//Join the session
-			OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
-			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-			OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
-		}
-	}
-	
-}
-
-void AMenuSystemCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
-{
-	if (!OnlineSessionInterface)
-	{
-		return;
-	}
-	FString Address;
-	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
-	{
-		Print(*FString::Printf(TEXT("Connect String: %s"), *Address));
-		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-		if (PlayerController)
-		{
-			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
-		}
-	}
-}
-
-void AMenuSystemCharacter::Print(FString message)
-{
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Cyan, message);
-	}
-}
-
-void AMenuSystemCharacter::PrintError(FString message)
-{
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, message);
-	}
 }
 
 void AMenuSystemCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)

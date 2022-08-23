@@ -6,8 +6,9 @@
 #include "OnlineSessionSettings.h"
 #include "MultiplayerSessionsSubsystem.h"
 
-void USessionWidget::Init()
+void USessionWidget::Init(FString HomePath)
 {
+	PathToHome = HomePath;
 	UGameInstance* GameInstance = GetGameInstance();
 	if (GameInstance)
 	{

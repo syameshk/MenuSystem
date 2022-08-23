@@ -16,7 +16,7 @@ class MULTIPLAYERSESSION_API USessionWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable)
-	void Init();
+	void Init(FString HomePath = FString(TEXT("/Game/Maps/StartUp")));
 
 	UFUNCTION(BlueprintCallable)
 	void Setup();
@@ -35,7 +35,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SwitchSession(FString TypeOfMatch = FString(TEXT("FreeForAll")), FName NewSessionName = FName(TEXT("GameSession")));
-
 
 protected:
 	virtual bool Initialize() override;
