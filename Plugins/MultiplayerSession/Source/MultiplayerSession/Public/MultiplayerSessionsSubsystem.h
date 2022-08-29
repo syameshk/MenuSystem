@@ -49,6 +49,10 @@ public:
 	FName MultiplayerSessionName{ NAME_GameSession };
 
 	void OnLoginCompleteCallback(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
+	UFUNCTION(BlueprintCallable)
+	void SetLogStatus(bool status);
+	UPROPERTY(EditAnywhere)
+	bool bIsLogAllowd{true};
 protected:
 
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);

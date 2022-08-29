@@ -50,6 +50,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 	//If exists, destroy the session
 	if (ExistingSession != nullptr)
 	{
+		Log(*FString::Printf(TEXT("CreateSession failed! %d"), ExistingSession->bHosting));
 		bCreateSessionOnDestroy = true;
 		LastNumPublicConnections = NumPublicConnections;
 		LastMatchType = MatchType;
@@ -57,7 +58,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 		DestroySession();
 		return;
 	}
-
+	Log(*FString::Printf(TEXT("Creating a session!")));
 	//Add delegate and store the delegate so we can later remove from the list
 	CreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
 
@@ -74,6 +75,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	//TEST
+	/*
 	int players = GetWorld()->GetNumPlayerControllers();
 	Log(*FString::Printf(TEXT("Players %d"), players));
 	if (!LocalPlayer)
@@ -91,9 +93,11 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 	else {
 		Log(*FString::Printf(TEXT("Local Player ID %s"), *Ptr.Get()->ToString()));
 	}
+	*/
 	//END TEST
 	if (!SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), MultiplayerSessionName, *LastSessionSettings))
 	{
+		Log(*FString::Printf(TEXT("CreateSession failed!")));
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 
 		MultiplayerOnCreateSessionComplete.Broadcast(false);
@@ -320,6 +324,8 @@ void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName SessionName, bo
 
 void UMultiplayerSessionsSubsystem::Log(FString message)
 {
+	if (!bIsLogAllowd)
+		return;
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Cyan, message);
@@ -328,6 +334,8 @@ void UMultiplayerSessionsSubsystem::Log(FString message)
 
 void UMultiplayerSessionsSubsystem::LogWarning(FString message)
 {
+	if (!bIsLogAllowd)
+		return;
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, message);
@@ -336,8 +344,15 @@ void UMultiplayerSessionsSubsystem::LogWarning(FString message)
 
 void UMultiplayerSessionsSubsystem::LogError(FString message)
 {
+	if (!bIsLogAllowd)
+		return;
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, message);
 	}
+}
+
+void UMultiplayerSessionsSubsystem::SetLogStatus(bool status)
+{
+	bIsLogAllowd = status;
 }
