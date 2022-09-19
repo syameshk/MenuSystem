@@ -8,6 +8,6 @@ public class MenuSystem : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay","OnlineSubsystem", "OnlineSubsystemSteam", "OnlineSubsystemEOS" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay","OnlineSubsystem", "OnlineSubsystemSteam", "OnlineSubsystemEOS","AgoraPlugin","MediaAssets" });
 	}
 }

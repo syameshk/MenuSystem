@@ -11,14 +11,19 @@ public class MultiplayerSession : ModuleRules
 		PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...
-			}
+            }
 			);
-				
-		
-		PrivateIncludePaths.AddRange(
+
+        if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] { "AndroidPermission" });
+        }
+
+        PrivateIncludePaths.AddRange(
 			new string[] {
 				// ... add other private include paths required here ...
-			}
+				"Slate", "SlateCore"
+            }
 			);
 			
 		
