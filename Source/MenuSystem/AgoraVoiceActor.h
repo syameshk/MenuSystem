@@ -6,7 +6,9 @@
 #include "GameFramework/Actor.h"
 #include <iostream>
 #include <string.h>
+#include "VoiceInterface.h"
 #include "AgoraPluginInterface.h"
+#include "BaseVoiceActor.h"
 #if PLATFORM_ANDROID
 #include "AndroidPermission/Classes/AndroidPermissionFunctionLibrary.h"
 #endif
@@ -14,7 +16,7 @@
 using namespace agora::rtc;
 
 UCLASS()
-class MENUSYSTEM_API AAgoraVoiceActor : public AActor, public agora::rtc::IRtcEngineEventHandler
+class MENUSYSTEM_API AAgoraVoiceActor : public ABaseVoiceActor, public agora::rtc::IRtcEngineEventHandler
 {
 	GENERATED_BODY()
 	
@@ -68,6 +70,13 @@ public:
 	void onAudioVolumeIndication(const AudioVolumeInfo* speakers, unsigned int speakerNumber,int totalVolume);
 	void onRtcStats(const RtcStats& stats);
 
+	void onRejoinChannelSuccess(const char* channel, uid_t uid, int elapsed);
+
+public:
+	bool IsVoiceConnected() override;
+	bool Mute(bool bMute) override;
+	bool GetMuteStatus() override;
+
 private:
 	agora::rtc::IRtcEngine* RtcEngineProxy;
 
@@ -81,4 +90,6 @@ private:
 
 	void ReleaseAgoraEngine();
 
+	bool bIsVoiceConnected = false;
+	bool bIsLocalPlayerMuted = false;
 };
